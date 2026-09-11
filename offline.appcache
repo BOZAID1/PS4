@@ -1,0 +1,16 @@
+CACHE MANIFEST
+# bozaid-v2 — change this version after every site edit
+
+CACHE:
+./
+index.html
+style.css
+config.js
+app.js
+assets/logo.png
+assets/background.png
+assets/facebook-qr.svg
+assets/tiktok-qr.svg
+
+NETWORK:
+*
