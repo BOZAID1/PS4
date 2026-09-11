@@ -6,7 +6,7 @@
   var links = window.BOZAID_LINKS || [];
   var buttons = [], selected = 0, configured = 0, saved = false;
   function message(text, state) { status.textContent = text; light.className = 'status-light ' + (state || ''); }
-  function ready() { saved = true; message(navigator.onLine === false ? 'بدون إنترنت · النسخة محفوظة' : 'تم الحفظ · جاهز دون إنترنت', 'ready'); }
+  function ready() { saved = true; message(navigator.onLine === false ? 'بدون إنترنت · النسخة محفوظة' : 'تم الحفظ', 'ready'); }
   function fail() { if (saved) { message('النسخة محفوظة · تعذّر التحقق من التحديث', 'ready'); } else { message('لم يكتمل الحفظ · أعد الفتح مع الإنترنت', 'error'); } }
   function safeURL(url) {
     if (!url || typeof url !== 'string') { return ''; }
