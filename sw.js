@@ -1,5 +1,5 @@
 'use strict';
-var CACHE_VERSION = 'bozaid-v2';
+var CACHE_VERSION = 'bozaid-v3';
 var FILES = ['./', 'index.html', 'style.css', 'config.js', 'app.js', 'assets/logo.png', 'assets/background.png', 'assets/facebook-qr.svg', 'assets/tiktok-qr.svg'];
 self.addEventListener('install', function (event) {
   event.waitUntil(caches.open(CACHE_VERSION).then(function (cache) {
