@@ -1,0 +1,71 @@
+name: BOZAID automatic updates
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/configure-pages@v5
+      - name: Prepare verified offline release
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, shutil
+          root = Path('.')
+          out = Path('_site')
+          out.mkdir(exist_ok=True)
+          names = ['index.html', 'style.css', 'config.js', 'app.js']
+          names += sorted(p.as_posix() for p in Path('assets').rglob('*') if p.is_file())
+          required = ['assets/logo.png', 'assets/background.png', 'assets/facebook-qr.svg', 'assets/tiktok-qr.svg']
+          for name in names + required:
+              p = Path(name)
+              if not p.is_file() or p.is_symlink():
+                  raise SystemExit('Missing or unsupported file: ' + name)
+          files = []
+          for name in names:
+              data = Path(name).read_bytes()
+              files.append({'path': name, 'sha256': hashlib.sha256(data).hexdigest()})
+              destination = out / name
+              destination.parent.mkdir(parents=True, exist_ok=True)
+              destination.write_bytes(data)
+          template = Path('sw.js').read_text(encoding='utf-8')
+          marker = '/* BOZAID_RELEASE */ null'
+          if template.count(marker) != 1:
+              raise SystemExit('Upload the new sw.js source supplied with this workflow.')
+          fingerprint = hashlib.sha256((json.dumps(files, sort_keys=True) + template).encode()).hexdigest()
+          release = {'id': fingerprint, 'files': files}
+          worker = template.replace(marker, json.dumps(release, ensure_ascii=True))
+          (out / 'sw.js').write_text(worker, encoding='utf-8')
+          manifest = 'CACHE MANIFEST\n# automatic-' + fingerprint + '\n\nCACHE:\n./\n' + '\n'.join(names) + '\n\nNETWORK:\n*\n'
+          (out / 'offline.appcache').write_text(manifest, encoding='utf-8')
+          (out / '.nojekyll').touch()
+          if Path('CNAME').is_file():
+              shutil.copyfile('CNAME', out / 'CNAME')
+          print('Release:', fingerprint[:12])
+          print('Verified files:', len(files))
+          PY
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish
+        id: deployment
+        uses: actions/deploy-pages@v4
